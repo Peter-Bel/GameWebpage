@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spell Check — The Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0a1628;
+      --navy-mid:   #0e2044;
+      --navy-light: #132d5e;
+      --green:      #00e676;
+      --green-dim:  #00c853;
+      --green-glow: #00e67633;
+      --black:      #050c1a;
+      --text-light: #d0dff7;
+      --text-muted: #7a96c2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Raleway', sans-serif;
+      background: var(--black);
+      color: var(--text-light);
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      background:
+        linear-gradient(to bottom, rgba(10,22,40,0.82) 0%, rgba(10,22,40,0.65) 60%, rgba(10,22,40,0.95) 100%),
+        url("titleScreen.png")
+        center/cover no-repeat fixed;
+    }
+
+    /* Floating rune particles */
+    .runes {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .rune {
+      position: absolute;
+      font-family: 'Cinzel', serif;
+      color: var(--green);
+      opacity: 0;
+      animation: floatRune var(--dur, 8s) var(--delay, 0s) infinite ease-in-out;
+      font-size: var(--fs, 1.2rem);
+    }
+    @keyframes floatRune {
+      0%   { opacity: 0;    transform: translateY(0)      rotate(0deg); }
+      20%  { opacity: 0.18; }
+      80%  { opacity: 0.12; }
+      100% { opacity: 0;    transform: translateY(-120px) rotate(25deg); }
+    }
+
+    /* Decorative top border */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+      max-width: 860px;
+    }
+
+    .hero-eyebrow {
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: var(--green);
+      font-weight: 600;
+      margin-bottom: 1.4rem;
+      animation: fadeUp 0.8s 0.2s both;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 900;
+      line-height: 1;
+      color: #fff;
+      text-shadow:
+        0 0 40px rgba(0,230,118,0.35),
+        0 0 80px rgba(0,230,118,0.15);
+      animation: fadeUp 0.8s 0.4s both;
+    }
+
+    .hero-title span {
+      color: var(--green);
+    }
+
+    .trailer span {
+      color: var(--green);
+    }
+
+    .divider {
+      width: 120px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      margin: 2rem auto;
+      animation: fadeUp 0.8s 0.6s both;
+    }
+
+    .hero-desc {
+      font-size: clamp(1rem, 2.2vw, 1.22rem);
+      line-height: 1.85;
+      color: var(--text-light);
+      font-weight: 300;
+      max-width: 640px;
+      margin: 0 auto 2.8rem;
+      animation: fadeUp 0.8s 0.8s both;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      padding: 0.9rem 2.8rem;
+      border: 2px solid var(--green);
+      color: var(--green);
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.3s;
+      animation: fadeUp 0.8s 1s both;
+    }
+    .hero-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--green);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+    .hero-cta:hover::before { transform: scaleX(1); }
+    .hero-cta:hover { color: var(--navy); }
+    .hero-cta span { position: relative; z-index: 1; }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      animation: fadeUp 1s 1.4s both;
+    }
+    .scroll-hint .arrow {
+      width: 22px;
+      height: 22px;
+      border-right: 2px solid var(--green);
+      border-bottom: 2px solid var(--green);
+      transform: rotate(45deg);
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: rotate(45deg) translateY(0); }
+      50%       { transform: rotate(45deg) translateY(5px); }
+    }
+
+    /* ── FEATURES SECTION ───────────────────────────────── */
+    .features {
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+      padding: 7rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .features::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, var(--green) 50%, transparent 100%);
+    }
+
+    /* ── Trailer SECTION ───────────────────────────────── */
+    .trailer {
+      justify-content: center;
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+      padding: 7rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .trailer::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+    }
+    
+
+    /* Large faded bg text */
+    .features::after {
+      content: 'SPELL CHECK';
+      position: absolute;
+      bottom: -2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: clamp(4rem, 12vw, 11rem);
+      font-weight: 900;
+      color: rgba(255,255,255,0.03);
+      white-space: nowrap;
+      pointer-events: none;
+      letter-spacing: 0.1em;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .trailer-vid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 5rem;
+    }
+
+    .section-tag {
+      font-size: 0.72rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .section-title em {
+      font-style: normal;
+      color: var(--green);
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 760px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
+    .col-card {
+      background: rgba(10,22,40,0.55);
+      border: 1px solid rgba(0,230,118,0.15);
+      border-radius: 2px;
+      padding: 2.8rem 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+    }
+    .col-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(0,230,118,0.5);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 30px rgba(0,230,118,0.08);
+    }
+
+    /* Corner accent */
+    .col-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 40px; height: 40px;
+      border-top: 2px solid var(--green);
+      border-left: 2px solid var(--green);
+    }
+    .col-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 40px; height: 40px;
+      border-bottom: 2px solid var(--green);
+      border-right: 2px solid var(--green);
+    }
+
+    .card-icon {
+      font-size: 2.4rem;
+      margin-bottom: 1.4rem;
+      display: block;
+      filter: drop-shadow(0 0 8px var(--green-dim));
+    }
+
+    .card-num {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.22rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .card-body {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    .card-body strong {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* ── FOOTER STRIP ───────────────────────────────────── */
+    .footer {
+      background: var(--black);
+      padding: 2.2rem;
+      text-align: center;
+      border-top: 1px solid rgba(0,230,118,0.08);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      font-family: 'Cinzel', serif;
+    }
+
+    .footer span { color: var(--green); }
+
+    /* ── UTILITIES ──────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HERO ───────────────────────────────────── -->
+<section class="hero">
+
+  <!-- Floating rune particles -->
+  <div class="runes" aria-hidden="true">
+    <div class="rune" style="left:8%;  top:70%; --fs:1rem;   --dur:9s;  --delay:0s">✦</div>
+    <div class="rune" style="left:15%; top:55%; --fs:1.5rem; --dur:11s; --delay:1s">⟁</div>
+    <div class="rune" style="left:25%; top:80%; --fs:0.9rem; --dur:8s;  --delay:3s">✧</div>
+    <div class="rune" style="left:40%; top:75%; --fs:1.2rem; --dur:13s; --delay:0.5s">◈</div>
+    <div class="rune" style="left:55%; top:65%; --fs:1rem;   --dur:10s; --delay:2s">⬡</div>
+    <div class="rune" style="left:68%; top:80%; --fs:1.4rem; --dur:9s;  --delay:4s">✦</div>
+    <div class="rune" style="left:80%; top:60%; --fs:0.85rem;--dur:12s; --delay:1.5s">◇</div>
+    <div class="rune" style="left:90%; top:72%; --fs:1.1rem; --dur:10s; --delay:2.5s">⟁</div>
+    <div class="rune" style="left:5%;  top:30%; --fs:1.3rem; --dur:14s; --delay:6s">✧</div>
+    <div class="rune" style="left:92%; top:40%; --fs:1rem;   --dur:11s; --delay:3.5s">◈</div>
+  </div>
+
+  <div class="hero-inner">
+    <p class="hero-eyebrow">A Magical Word Adventure</p>
+    <h1 class="hero-title">Spell <span>Check</span></h1>
+    <div class="divider"></div>
+    <p class="hero-desc">
+      The game about fast spelling and intense combat. After a student of an esteemed magical accademy 
+      learns about the dark dungeons of the school, they set out to end the evil teachers that lurk in the depths.
+    </p>
+  </div>
+
+</section>
+
+<!-- ── Trailer ───────────────────────────────── -->
+<section class="trailer" id="trailer">
+    <div class="features-header">
+    <p class="section-tag">Showcase</p>
+    <h2 class="section-title">Game Trailer</h2>
+    </div>
+    
+    <div class="trailer-vid">
+    <video width="640" height="360" controls style="display: flex; justify-content: center; align-items: center;">
+      <source src="WizardGameTrailer.mp4" type="video/mp4" style="display: flex; justify-content: center; align-items: center;">
+      Your browser does not support the video tag.
+    </video>
+    </div>
+
+    <div class="features-header">
+    <h2 class="section-title">Game Link:</h2>
+    <div class="divider"></div>
+    <a href="https://play.unity.com/en/games/efe5a242-adb3-4301-be8c-c2c9b7d28857/spellcheckSpellCheck on Unity Play"
+     class="hero-cta"><span>Full Game</span></a>
+    </div>
+    
+</section>
+
+<!-- ── FEATURES ───────────────────────────────── -->
+<section class="features" id="features">
+
+  <div class="features-header">
+    <p class="section-tag">Game Future</p>
+    <h2 class="section-title"><em>Spell Check</em> Game Development Plans</h2>
+  </div>
+
+  <div class="columns">
+
+    <!-- Card 1 -->
+    <div class="col-card">
+      <h3 class="card-title">Gameplay</h3>
+      <p class="card-body">
+        Spell Check blends <strong>turn-based strategy</strong> with vocabulary.
+        Each word you spell correctly is converted into a unique magical attack. 
+        In a fuller release, these spells would interact with more depth. While 
+        the game has some combo words (like fire and wind combining for more damage),
+        it isn't as developed as it could be. We would likely add more combinations, 
+        like having ice do less damage if fire was used. Or, dark and light causing 
+        major debuffs for an enemy. Each element should interact or stand out in 
+        some way.
+      </p>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col-card">
+      <h3 class="card-title">World Building</h3>
+      <p class="card-body">
+        The game currently doesn't provide much context for the player. But we do have a
+        story. After the tutorial fight, we would like to add a small cutscene. In it, the player
+        finds a blood path leading to the <strong>hidden dungeon</strong>. We could also add
+        things within each floor that clues the player into what's going
+        on. The evil teacher is conducting experiments on many fantasy creatures, and in a
+        fuller release we would provide the details of these experiments through <strong>NPCs</strong>
+        and <strong>lore items</strong> scattered throughout the dungeon.
+      </p>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="col-card">
+      <h3 class="card-title">Exploration</h3>
+      <p class="card-body">
+        Right now, the dungeon can feel stagnant and bare. While there're plenty of enemies to
+        fight, there's no pickups or paths that incentivise decision making. As such, we would
+        like to add a <strong>currency system</strong> and some <strong>traps</strong> within 
+        the dungeons. If there were shops and money laying around, there's an incentive to play 
+        risky for greater rewards. However, having traps could also provide risk for exploring 
+        without care. As such, these elements would provide the game with more depth for the 
+        player.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────── -->
+<footer class="footer">
+  <span>Spell Check</span> &nbsp;·&nbsp; &copy; 2026
+</footer>
+
+<script>
+  // Smooth scroll for CTA link
+
+  // Intersection Observer — fade-in cards on scroll
+  const cards = document.querySelectorAll('.col-card');
+  cards.forEach((card, i) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(36px)';
+    card.style.transition = `opacity 0.7s ${i * 0.15}s ease, transform 0.7s ${i * 0.15}s ease, border-color 0.35s ease, box-shadow 0.35s ease`;
+  });
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  cards.forEach(card => obs.observe(card));
+</script>
+</body>
+</html>
